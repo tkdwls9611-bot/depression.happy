@@ -68,7 +68,6 @@ def create_new_chat_session(client, model_name):
     """새로운 Gemini Chat 세션을 생성하고 초기화합니다."""
     try:
         # 시스템 프롬프트를 포함한 설정 구성
-        # ⭐️⭐️⭐️ [수정] SyntaxError 해결: 구문이 한 줄로 올바르게 연결되었습니다.
         config = genai.types.GenerateContentConfig( 
             system_instruction=SYSTEM_PROMPT
         )
@@ -104,7 +103,7 @@ def handle_user_input(client, model_name, user_prompt):
                     st.session_state.chat_session = new_chat
                     st.session_state.history_limit_counter = 0 # 카운터 초기화
                 
-                recent_history = st.session_state.chat_history[-HISTORY_WINDOW_SIZE:]
+                # Note: 이전 대화 기록을 새 세션에 명시적으로 추가하지 않고 메시지 히스토리만 유지합니다.
 
             # API 호출
             response = st.session_state.chat_session.send_message(user_prompt)
@@ -119,7 +118,7 @@ def handle_user_input(client, model_name, user_prompt):
             
             st.session_state.history_limit_counter += 2
             
-            # ⭐️⭐️⭐️ [수정] SyntaxError 해결 및 올바른 논리: 성공 시 함수 종료
+            # 성공 시 함수 종료
             return response.text 
             
         except APIError as e:
@@ -247,15 +246,9 @@ def main():
 
 
     # 3. 챗 세션 초기화/확인
-    # ⭐️⭐️⭐️ [수정] AttributeError 해결: None 체크를 통해 안전하게 .model 속성에 접근합니다.
-    needs_new_session = False
-    
+    # ⭐️⭐️⭐️ [최종 수정]: AttributeError 방지를 위해 if st.session_state.chat_session.model != ... 로직을 제거하고 
+    # 오직 None일 때만 생성하도록 간소화합니다. 모델 변경은 on_change에서 처리됩니다.
     if st.session_state.chat_session is None:
-        needs_new_session = True
-    elif st.session_state.chat_session.model != st.session_state.selected_model:
-        needs_new_session = True
-        
-    if needs_new_session:
         st.session_state.chat_session = create_new_chat_session(st.session_state.client, st.session_state.selected_model)
         if not st.session_state.chat_session:
             st.stop() # 세션 생성 실패 시 중단
@@ -285,3 +278,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
